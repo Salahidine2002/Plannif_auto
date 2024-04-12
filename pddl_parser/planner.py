@@ -122,6 +122,7 @@ class Planner:
                     visited.add(new_state)       # add the new state to the visited states
                     fringe.append(new_state)     # add the new state to the fringe
                     fringe.append((act, plan))   # add the action and the plan to the fringe
+                    path_cost -= 1 
         return None
 
     # -----------------------------------------------
