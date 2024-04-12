@@ -1,6 +1,6 @@
 import random
 
-def h(state, act, goal_pos, goal_not):
+def h(state, goal_pos, goal_not):
     # Calculate the heuristic
     #return random.randint(0, 10)
     """
@@ -19,18 +19,18 @@ def h(state, act, goal_pos, goal_not):
     h_value = 0
     
     # For each positive goal condition, increase the heuristic value if it is not already satisfied in the current state
-    for var, value in goal_pos.items():
-        if state.get(var) != value:
+    for condition in goal_pos:
+        if condition not in state:
             h_value += 1
             
     # For each negative goal condition (if applicable), increase the heuristic value if the condition is present in the current state
-    for var, value in goal_not.items():
-        if state.get(var) == value:
+    for condition in goal_not:
+        if condition in state:
             h_value += 1
             
     return h_value
 
 
-def g(state, act, initial_state):
+def g(state, initial_state, path_cost):
     # Calculate the uniform cost
-    return random.randint(0, 10)
+    return path_cost+1
