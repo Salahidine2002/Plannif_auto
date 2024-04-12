@@ -118,7 +118,7 @@ class Planner:
                             act, plan = plan
                             full_plan.insert(0, act) # insert the action in the plan
                             steps += 1
-                        return full_plan, i
+                        return full_plan, steps
                     visited.add(new_state)       # add the new state to the visited states
                     fringe.append(new_state)     # add the new state to the fringe
                     fringe.append((act, plan))   # add the action and the plan to the fringe
