@@ -21,7 +21,6 @@ from .heuristic import g, h
 
 
 class Planner:
-
     # -----------------------------------------------
     # Solve
     # -----------------------------------------------
@@ -68,6 +67,7 @@ class Planner:
         return None
     
     def solver_research_heuristic(self, domain, problem):
+        """A* search is best-first graph search with f(n) = g(n)+h(n)."""
         print("\n", "#"*7,"Solver with research algorithm and heuristic", "#"*7, "\n")
         # Parser
         parser = PDDL_Parser()
@@ -75,6 +75,7 @@ class Planner:
         parser.parse_problem(problem)
         # Parsed data
         state = parser.state
+        print(state)
         goal_pos = parser.positive_goals
         goal_not = parser.negative_goals
         # Do nothing because is applicable
@@ -91,6 +92,7 @@ class Planner:
         # Search
         visited = set([state])
         fringe = [state, None]
+        path_cost = 0
         while fringe:
             state = fringe.pop(0)
             plan = fringe.pop(0)
@@ -98,7 +100,8 @@ class Planner:
             for act in ground_actions:
                 if self.applicable(state, act.positive_preconditions, act.negative_preconditions): # check if this action is applicable
                     # Calculate the path cost
-                    cost = g(state, act, parser.state) + h(state, act, goal_pos, goal_not)
+                    path_cost = g(state, parser.state, path_cost)
+                    cost = path_cost + h(state, goal_pos, goal_not)
                     # Add the action and cost to the list of aplicable actions
                     aplicable_actions.append((act, cost))
 
