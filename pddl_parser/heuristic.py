@@ -18,6 +18,7 @@ def h(state, goal_pos, goal_not):
     # Initialize the heuristic value to 0
     h_value = 0
     
+    
     # For each positive goal condition, increase the heuristic value if it is not already satisfied in the current state
     for condition in goal_pos:
         if condition not in state:
@@ -31,6 +32,6 @@ def h(state, goal_pos, goal_not):
     return h_value
 
 
-def g(state, initial_state, path_cost):
+def g(path_cost, state, action, next_state):
     # Calculate the uniform cost
     return path_cost+1

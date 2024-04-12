@@ -18,7 +18,7 @@
 
 from .PDDL import PDDL_Parser
 from .heuristic import g, h
-
+from .planning_problem import BasePlanningProblem
 
 class Planner:
     # -----------------------------------------------
@@ -75,9 +75,12 @@ class Planner:
         parser.parse_problem(problem)
         # Parsed data
         state = parser.state
-        print(state)
+        ini_state = state
+        print("Initial State: ",ini_state)
         goal_pos = parser.positive_goals
+        print("Positive Goal: ", goal_pos)
         goal_not = parser.negative_goals
+        print("Negative Goal: ", goal_not)
         # Do nothing because is applicable
         if self.applicable(state, goal_pos, goal_not):
             return [] 
@@ -92,16 +95,33 @@ class Planner:
         # Search
         visited = set([state])
         fringe = [state, None]
+        new_state = [None]
         path_cost = 0
         while fringe:
             state = fringe.pop(0)
             plan = fringe.pop(0)
             aplicable_actions = []
+            all_possible_actions = []
+            #print("Apliable_actions", aplicable_actions)
+
+            i=0
             for act in ground_actions:
+
                 if self.applicable(state, act.positive_preconditions, act.negative_preconditions): # check if this action is applicable
+                    i+=1
+                    print("qtd. applicable acts per state",i)
+                    print("Act: ", act)
+                    #print("Act: ", act.positive_preconditions)
                     # Calculate the path cost
-                    path_cost = g(state, parser.state, path_cost)
-                    cost = path_cost + h(state, goal_pos, goal_not)
+                    path_cost = g(path_cost, parser.state, act, new_state)
+                    #print("ground_actions", ground_actions[46])
+                    heuristic_cost = h(state, goal_pos, goal_not)
+                    all_possible_actions.append(act)
+                    #print("all_possible_actions", all_possible_actions)
+                    planning_problem = BasePlanningProblem(ini_state, state, goal_pos, goal_not, act, path_cost)
+                    #heuristic_cost = planning_problem.h_pg_levelsum()
+                    cost = path_cost + heuristic_cost
+                    print("Total cost", cost)
                     # Add the action and cost to the list of aplicable actions
                     aplicable_actions.append((act, cost))
 
@@ -118,11 +138,11 @@ class Planner:
                             act, plan = plan
                             full_plan.insert(0, act) # insert the action in the plan
                             steps += 1
+                            print("qtd. steps", steps)
                         return full_plan, steps
                     visited.add(new_state)       # add the new state to the visited states
                     fringe.append(new_state)     # add the new state to the fringe
                     fringe.append((act, plan))   # add the action and the plan to the fringe
-                    path_cost -= 1 
         return None
 
     # -----------------------------------------------
