@@ -110,10 +110,12 @@ class Planner:
                 if new_state not in visited:
                     if self.applicable(new_state, goal_pos, goal_not): # check if the new state is the goal
                         full_plan = [act]
+                        steps = 0
                         while plan:
                             act, plan = plan
                             full_plan.insert(0, act) # insert the action in the plan
-                        return full_plan
+                            steps += 1
+                        return full_plan, i
                     visited.add(new_state)       # add the new state to the visited states
                     fringe.append(new_state)     # add the new state to the fringe
                     fringe.append((act, plan))   # add the action and the plan to the fringe
@@ -144,8 +146,9 @@ if __name__ == '__main__':
     problem = sys.argv[2]
     verbose = len(sys.argv) > 3 and sys.argv[3] == '-v'
     planner = Planner()
-    plan = planner.solver_research_heuristic(domain, problem)
+    plan, steps = planner.solver_research_heuristic(domain, problem)
     print('Time: ' + str(time.time() - start_time) + 's')
+    print('Steps: ' + str(steps))
     if plan is not None:
         print('plan:')
         for act in plan:
