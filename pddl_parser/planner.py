@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from .PDDL import PDDL_Parser
-from .heuristic import g, h
+from pddl_parser.PDDL import PDDL_Parser
+from pddl_parser.heuristic import g, h
+import sys, time
 
 
 class Planner:
@@ -91,39 +92,32 @@ class Planner:
                 ground_actions.append(act)
         # Search
         visited = set([state])
-        fringe = [state, None]
-        path_cost = 0
+        fringe = [(state, [], 0)]  # Include path_cost in the fringe tuple
+
         while fringe:
-            state = fringe.pop(0)
-            plan = fringe.pop(0)
+            state, plan, path_cost = fringe.pop(0)  # Unpack path_cost
             aplicable_actions = []
             for act in ground_actions:
-                if self.applicable(state, act.positive_preconditions, act.negative_preconditions): # check if this action is applicable
-                    # Calculate the path cost
-                    path_cost = g(state, parser.state, path_cost)
-                    cost = path_cost + h(state, goal_pos, goal_not)
-                    # Add the action and cost to the list of aplicable actions
+                if self.applicable(state, act.positive_preconditions, act.negative_preconditions):
+                    # Calculate the total cost for reaching this new state
+                    new_cost = path_cost + 1  # Increment path cost as you dive deeper
+                    cost = new_cost + h(state, goal_pos, goal_not)  # g(n) + h(n)
                     aplicable_actions.append((act, cost))
 
             # Sort the list of aplicable actions by cost
-            aplicable_actions.sort(key=lambda x: x[1], reverse=False)
+            aplicable_actions.sort(key=lambda x: x[1])
 
-            for act, _ in aplicable_actions:
-                new_state = self.apply(state, act.add_effects, act.del_effects) # apply the action if is available and change the state
+            for act, cost in aplicable_actions:
+                new_state = self.apply(state, act.add_effects, act.del_effects)
                 if new_state not in visited:
-                    if self.applicable(new_state, goal_pos, goal_not): # check if the new state is the goal
-                        full_plan = [act]
-                        steps = 0
-                        while plan:
-                            act, plan = plan
-                            full_plan.insert(0, act) # insert the action in the plan
-                            steps += 1
-                        return full_plan, steps
-                    visited.add(new_state)       # add the new state to the visited states
-                    fringe.append(new_state)     # add the new state to the fringe
-                    fringe.append((act, plan))   # add the action and the plan to the fringe
-                    path_cost -= 1 
+                    if self.applicable(new_state, goal_pos, goal_not):
+                        full_plan = plan + [act]
+                        return full_plan, len(full_plan), path_cost  # Return path_cost as depth
+                    visited.add(new_state)
+                    fringe.append((new_state, plan + [act], path_cost + 1))  # Update path_cost here
+
         return None
+
 
     # -----------------------------------------------
     # Applicable
@@ -143,19 +137,34 @@ class Planner:
 # -----------------------------------------------
 # Main
 # -----------------------------------------------
-if __name__ == '__main__':
-    import sys, time
+def main(domain, problem, verbose=False):
     start_time = time.time()
-    domain = sys.argv[1]
-    problem = sys.argv[2]
-    verbose = len(sys.argv) > 3 and sys.argv[3] == '-v'
     planner = Planner()
-    plan, steps = planner.solver_research_heuristic(domain, problem)
+    plan, steps, path_cost = planner.solver_research_heuristic(domain, problem)
     print('Time: ' + str(time.time() - start_time) + 's')
     print('Steps: ' + str(steps))
+    print('path_cost: ' +str(path_cost))
     if plan is not None:
         print('plan:')
         for act in plan:
             print(act if verbose else act.name + ' ' + ' '.join(act.parameters))
     else:
-        sys.exit('No plan was found')
+        print('No plan was found')
+
+    # Créez un dictionnaire avec les résultats
+    results = {
+        'time': time.time() - start_time,
+        'steps': steps,
+        'path_cost': path_cost,
+        'plan': [act if verbose else act.name + ' ' + ' '.join(act.parameters) for act in plan] if plan is not None else None
+    }
+
+    # Retournez les résultats
+    return results
+
+if __name__ == "__main__":
+    import sys
+    domain = sys.argv[1]
+    problem = sys.argv[2]
+    verbose = len(sys.argv) > 3 and sys.argv[3] == '-v'
+    main(domain, problem, verbose)
