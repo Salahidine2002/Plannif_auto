@@ -9,11 +9,21 @@ python -B -m pddl_parser.planner domain\path problem\path
 
 ## Parser
 
-   To parse the problems initially, we relied on a pre-existing parser limited to handling conventional domain and problem descriptions, lacking support for conditional effects, disjunctive preconditions, existential, or universal conditions. With this parser, we conducted benchmarking of our planners using various heuristic functions and search algorithms.
+   To parse the problems initially, we relied on a pre-existing parser ([link](https://github.com/pucrs-automated-planning/pddl-parser))limited to handling conventional domain and problem descriptions, lacking support for conditional effects, disjunctive preconditions, existential, or universal conditions. With this parser, we conducted benchmarking of our planners using various heuristic functions and search algorithms.
 
 For scenarios involving more intricate features, we employed a general-purpose parser from the PDDL library capable of accommodating these complex requirements.
 
 ## Research Algorithm Benchmarking
+
+We utilized three different research algorithms to find the solution, described in the following lines:
+
+1. **In-depth search**: In each state, we store all the possible actions and apply the first one. If there are no more possible actions and the objective is not achieved, we backtrack and try another action until we find the solution.
+
+2. **A***: In each iteration, we select the node with the lowest estimated total cost. For this, we consider the cost function as \( f(n) = g(n) + h(n) \), where \( g(n) \) represents the estimated cost from the initial state to the current state (calculated by the depth of the search tree), and \( h(n) \) is the heuristic, described below.
+
+3. **Iterative Deepening A***: The second approach is a variation of A* where we calculate the initial cost of the state \( T \) and add to the set of possible actions only those actions whose cost is lower than \( T \). If no action is possible, we return all possible actions regardless of \( T \).
+
+To change the strategy of the research algorithm, modify the ```pddl-parser/planner.py``` file. In line 143, specify the strategy you wish to adopt.
 
 ## Heuristics Benchmarking
 
