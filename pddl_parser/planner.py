@@ -117,6 +117,68 @@ class Planner:
                     fringe.append((new_state, plan + [act], path_cost + 1))  # Update path_cost here
 
         return None
+    
+    def solver_research_heuristic_IDA(self, domain, problem):
+        """A* search is best-first graph search with f(n) = g(n)+h(n)."""
+        print("\n", "#"*7,"Solver with research algorithm and heuristic", "#"*7, "\n")
+        # Parser
+        parser = PDDL_Parser()
+        parser.parse_domain(domain)
+        parser.parse_problem(problem)
+        # Parsed data
+        state = parser.state
+        print(state)
+        goal_pos = parser.positive_goals
+        goal_not = parser.negative_goals
+        # Do nothing because is applicable
+        if self.applicable(state, goal_pos, goal_not):
+            return [] 
+        # Grounding process
+        ground_actions = []
+        print("Objects", parser.objects)
+        print("Types", parser.types)
+        # Get all the actions as posible
+        for action in parser.actions:
+            for act in action.groundify(parser.objects, parser.types):
+                ground_actions.append(act)
+        # Search
+        visited = set([state])
+        fringe = [(state, [], 0)]  # Include path_cost in the fringe tuple
+
+        # Define T value, we asume g(n) = 0
+        T = 2**64
+        
+        while fringe:
+            state, plan, path_cost = fringe.pop(0)  # Unpack path_cost
+            aplicable_actions = []
+            aplicable_actions_T = []
+            for act in ground_actions:
+                if self.applicable(state, act.positive_preconditions, act.negative_preconditions):
+                    # Calculate the total cost for reaching this new state
+                    new_cost = path_cost + 1  # Increment path cost as you dive deeper
+                    cost = new_cost + h(state, goal_pos, goal_not)  # g(n) + h(n)
+                    if cost <= T:
+                        aplicable_actions_T.append((act, cost))
+                    aplicable_actions.append((act, cost))
+
+            # Redefine T value if there is aplicable actions
+            if aplicable_actions_T:
+                T = aplicable_actions_T[0][1]
+                aplicable_actions = aplicable_actions_T.copy()
+            
+            # Sort the list of aplicable actions by cost
+            aplicable_actions.sort(key=lambda x: x[1])
+
+            for act, cost in aplicable_actions:
+                new_state = self.apply(state, act.add_effects, act.del_effects)
+                if new_state not in visited:
+                    if self.applicable(new_state, goal_pos, goal_not):
+                        full_plan = plan + [act]
+                        return full_plan, len(full_plan), path_cost  # Return path_cost as depth
+                    visited.add(new_state)
+                    fringe.append((new_state, plan + [act], path_cost + 1))  # Update path_cost here
+
+        return None
 
 
     # -----------------------------------------------
