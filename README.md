@@ -9,7 +9,7 @@ python -B -m pddl_parser.planner domain\path problem\path
 
 ## Parser
 
-   To parse the problems initially, we relied on a pre-existing parser ([link](https://github.com/pucrs-automated-planning/pddl-parser))limited to handling conventional domain and problem descriptions, lacking support for conditional effects, disjunctive preconditions, existential, or universal conditions. With this parser, we conducted benchmarking of our planners using various heuristic functions and search algorithms.
+   To parse the problems initially, we relied on a pre-existing parser ([link](https://github.com/pucrs-automated-planning/pddl-parser)) limited to handling conventional domain and problem descriptions, lacking support for conditional effects, disjunctive preconditions, existential, or universal conditions. With this parser, we conducted benchmarking of our planners using various heuristic functions and search algorithms.
 
 For scenarios involving more intricate features, we employed a general-purpose parser from the PDDL library capable of accommodating these complex requirements.
 
