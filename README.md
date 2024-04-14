@@ -19,7 +19,8 @@ To choose a heuristics to implement in the research algorithm, call the respecti
 
 1. **Simple Heuristic (`h`)**:
 
-   This straightforward heuristic calculates a heuristic value based on the difference between the current state and the goal state. It assesses the presence of positive goals and the absence of negative goals in the current state. The heuristic value is incremented for each unsatisfied positive goal and each present negative goal. Despite its simplicity, this heuristic offers a basic estimate of the distance to the goal state.
+   This straightforward heuristic calculates a heuristic value based on the difference between the current state and the goal state. It assesses the presence of positive goals and the absence of negative goals in the current state. The heuristic value is incremented for each unsatisfied positive goal and each present negative goal. Despite its simplicity, this heuristic offers a basic estimate of the distance to the goal state.  
+   We give the possibility to attribute different weights to each predicate of the domain, since we thought that some have more importance than other, and unsatisfying them will led to bigger price.
 
 2. **Planning Graph Level Sum Heuristic (`h_pg_levelsum`)**:
 
