@@ -29,8 +29,3 @@ def h(state, goal_pos, goal_not):
             h_value += 1
             
     return h_value
-
-
-def g(state, initial_state, path_cost):
-    # Calculate the uniform cost
-    return path_cost+1

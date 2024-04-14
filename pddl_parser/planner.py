@@ -17,7 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 from pddl_parser.PDDL import PDDL_Parser
-from pddl_parser.heuristic import g, h
+from pddl_parser.heuristic import h
+from .planning_problem import BasePlanningProblem
 import sys, time
 
 
@@ -76,6 +77,7 @@ class Planner:
         parser.parse_problem(problem)
         # Parsed data
         state = parser.state
+        ini_state = state
         print(state)
         goal_pos = parser.positive_goals
         goal_not = parser.negative_goals
@@ -101,7 +103,11 @@ class Planner:
                 if self.applicable(state, act.positive_preconditions, act.negative_preconditions):
                     # Calculate the total cost for reaching this new state
                     new_cost = path_cost + 1  # Increment path cost as you dive deeper
-                    cost = new_cost + h(state, goal_pos, goal_not)  # g(n) + h(n)
+                    planning_problem = BasePlanningProblem(ini_state, state, goal_pos, goal_not, act, path_cost)
+                    # Choose the heuristic you want to use, h, h_pg_setlevel, h_pg_levelsum or h_pg_maxlevel 
+                    heuristic_cost = planning_problem.h_pg_maxlevel()
+                    #heuristic_cost = h(state, goal_pos, goal_not)
+                    cost = new_cost + heuristic_cost  # g(n) + h(n)
                     aplicable_actions.append((act, cost))
 
             # Sort the list of aplicable actions by cost
