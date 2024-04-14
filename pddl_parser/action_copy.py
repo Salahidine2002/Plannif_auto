@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 import itertools
-from pddl_parser.logic import *
 
 
 class Action:
@@ -26,19 +25,17 @@ class Action:
     # Initialize
     # -----------------------------------------------
 
-    def __init__(self, name, parameters, positive_preconditions, negative_preconditions, add_effects, del_effects,
-                 precondition_equation, variables):
+    def __init__(self, name, parameters, positive_preconditions, negative_preconditions, add_effects, del_effects):
         def frozenset_of_tuples(data):
             return frozenset([tuple(t) for t in data])
 
         self.name = name
         self.parameters = tuple(parameters)  # Make parameters a tuple so we can hash this if need be
+        print("positive", positive_preconditions)
         self.positive_preconditions = frozenset_of_tuples(positive_preconditions)
         self.negative_preconditions = frozenset_of_tuples(negative_preconditions)
         self.add_effects = frozenset_of_tuples(add_effects)
         self.del_effects = frozenset_of_tuples(del_effects)
-        self.precondition_equation = precondition_equation
-        self.variables = variables
 
     # -----------------------------------------------
     # to String
@@ -85,46 +82,7 @@ class Action:
             negative_preconditions = self.replace(self.negative_preconditions, variables, assignment)
             add_effects = self.replace(self.add_effects, variables, assignment)
             del_effects = self.replace(self.del_effects, variables, assignment)
-            yield Action(self.name, assignment, positive_preconditions, negative_preconditions, add_effects, del_effects,
-                         self.precondition_equation, self.variables) # return this posible action to do
-    
-    def groundify_logic(self, state, objects, types):
-        print(state)
-        dict_const = {}
-        for const in list(state[0]):
-            dict_const[const.name] = const
-        print("dict_constd", dict_const)
-        if not self.parameters:
-            return 0
-        type_map = []
-        variables = []
-        for var, type in self.parameters: # (['?x', 'object'], ['?y', 'object'], ['?z', 'object'])
-            type_stack = [type]
-            items = []
-            while type_stack:
-                t = type_stack.pop() # get object
-                if t in objects:
-                    items += objects[t]
-                if t in types:
-                    type_stack += types[t]
-            type_map.append(items) # [['d0', 'd1', 'd2', 'd3', 'd4', 'p0', 'p1', 'p2'], ['d0', 'd1', 'd2', 'd3', 'd4', 'p0', 'p1', 'p2'], ['d0', 'd1', 'd2', 'd3', 'd4', 'p0', 'p1', 'p2']]
-            variables.append(var) #  ['?x', '?y', '?z']
-        
-        print("Variabels", variables)
-        print("Logic var", self.variables)
-        print("type_map", type_map)
-        for assignment in itertools.product(*type_map):
-            dict_var = {}
-            i=0
-            for var, value in self.variables.items():
-                dict_var[value] = dict_const[assignment[i]]
-                i += 1
-            evaluation = self.precondition_equation.evaluate(state, dict_var)
-            if evaluation:
-                print("EVAluation", evaluation, assignment)
-        
-        return 0
-
+            yield Action(self.name, assignment, positive_preconditions, negative_preconditions, add_effects, del_effects) # return this posible action to do
 
     # -----------------------------------------------
     # Replace
@@ -139,28 +97,12 @@ class Action:
                     pred[i] = assignment[variables.index(p)]
             new_group.append(pred)
         return new_group
-    
-    def create_parameters_logic(self, parameters):
-        parameters_list = {}
-        for var, name_var in parameters:
-            parameters_list[var] = Constant(var)
-        return parameters_list
-    
-    def evaluate_precondition(self, state):
-        dict_var = {}
-        i=0
-        for var, value in self.variables.items():
-            dict_var[value] = list(state[0])[i]
-            i += 1
-        evaluation = self.precondition_equation.evaluate(state, dict_var)
-        return evaluation
 
 
 # -----------------------------------------------
 # Main
 # -----------------------------------------------
 if __name__ == '__main__':
-    
     a = Action('move', [['?ag', 'agent'], ['?from', 'pos'], ['?to', 'pos']], # parameters
                        [['at', '?ag', '?from'], ['adjacent', '?from', '?to']], # positive_preconditions
                        [['at', '?ag', '?to']], # negative_preconditions

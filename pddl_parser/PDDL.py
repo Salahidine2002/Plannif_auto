@@ -18,6 +18,7 @@
 
 import re
 from .action import Action
+from pddl_parser.logic import *
 
 
 class PDDL_Parser:
@@ -66,8 +67,11 @@ class PDDL_Parser:
             self.requirements = []
             self.types = {}
             self.objects = {}
+            self.logic_objects = {}
+            self.logic_objects_set = set()
             self.actions = []
             self.predicates = {}
+            self.logic_predicates = {} #get predicates to logic
             while tokens:
                 group = tokens.pop(0)
                 t = group.pop(0)
@@ -82,6 +86,7 @@ class PDDL_Parser:
                     self.parse_objects(group, t)
                 elif t == ':predicates':
                     self.parse_predicates(group)
+                    self.logic_parse_predicates()
                 elif t == ':types':
                     self.parse_types(group)
                 elif t == ':action':
@@ -124,6 +129,14 @@ class PDDL_Parser:
 
     def parse_objects(self, group, name):
         self.parse_hierarchy(group, self.objects, name, False)
+    
+    def logic_parse_objects(self):
+        i=0
+        for _, objects in self.objects.items():
+            for object in objects:
+                self.logic_objects[object] = Constant(object)
+                self.logic_objects_set.add(self.logic_objects[object])
+                i+=1
 
     # -----------------------------------------------
     # Parse types
@@ -156,6 +169,11 @@ class PDDL_Parser:
             while untyped_variables:
                 arguments[untyped_variables.pop(0)] = 'object'
             self.predicates[predicate_name] = arguments
+    
+    def logic_parse_predicates(self):
+        # Create predicate for the logic predicate
+        for pred_name, objects in self.predicates.items():
+            self.logic_predicates[pred_name] = Predicate(pred_name, len(objects))
 
     # -----------------------------------------------
     # Parse action
@@ -171,6 +189,7 @@ class PDDL_Parser:
         parameters = []
         positive_preconditions = []
         negative_preconditions = []
+        logic_preconditions = None
         add_effects = []
         del_effects = []
         extensions = []
@@ -195,13 +214,16 @@ class PDDL_Parser:
                 while untyped_parameters:
                     parameters.append([untyped_parameters.pop(0), 'object'])
             elif t == ':precondition':
+                variables = {}
+                precondition_equation = self.transform_equation_recursive(group[0].copy(), variables=variables)
                 self.split_predicates(group.pop(0), positive_preconditions, negative_preconditions, name, ' preconditions')
             elif t == ':effect':
                 self.split_predicates(group.pop(0), add_effects, del_effects, name, ' effects')
             else:
                 group.insert(0, t)
                 extensions.append(group)
-        action = Action(name, parameters, positive_preconditions, negative_preconditions, add_effects, del_effects)
+        action = Action(name, parameters, positive_preconditions, negative_preconditions, add_effects, del_effects,
+                        precondition_equation, variables)
         self.parse_action_extended(action, extensions)
         self.actions.append(action)
 
@@ -221,6 +243,7 @@ class PDDL_Parser:
         if type(tokens) is list and tokens.pop(0) == 'define':
             self.problem_name = None
             self.state = frozenset()
+            self.logic_state = set()
             self.positive_goals =   ()
             self.negative_goals = frozenset()
             while tokens:
@@ -235,8 +258,10 @@ class PDDL_Parser:
                     pass  # Ignore requirements in problem, parse them in the domain
                 elif t == ':objects':
                     self.parse_objects(group, t)
+                    self.logic_parse_objects()
                 elif t == ':init':
-                    self.state = frozenset_of_tuples(group)
+                    self.state = frozenset_of_tuples(group.copy())
+                    self.create_logic_state(group)
                 elif t == ':goal':
                     positive_goals = []
                     negative_goals = []
@@ -244,6 +269,7 @@ class PDDL_Parser:
                     self.positive_goals = frozenset_of_tuples(positive_goals)
                     self.negative_goals = frozenset_of_tuples(negative_goals)
                 else: self.parse_problem_extended(t, group)
+            self.kb = (self.logic_objects_set, self.logic_state)
         else:
             raise Exception('File ' + problem_filename + ' does not match problem pattern')
 
@@ -269,6 +295,41 @@ class PDDL_Parser:
                     negative.append(predicate[-1])
                 else:
                     positive.append(predicate)
+    
+    def create_logic_state(self, group):
+        for predicate in group:
+            pred_name = predicate[0]
+            pred_tuple = ()
+            for i in range(1, len(predicate)):
+                pred_tuple += (self.logic_objects[predicate[i]].name,)
+            self.logic_state.add((pred_name, pred_tuple))
+    
+    def transform_equation_recursive(self, equation, variables):
+        # We will use an recursive approach to create the equation
+        if equation[0] == 'and' or equation[0] == 'or':
+            operator = And if equation[0] == 'and' else Or
+            formulas = [self.transform_equation_recursive(item, variables=variables) for item in equation[1:]]
+            return operator(*formulas)
+        elif equation[0] == 'clear':
+            return Predicate('clear', 1)
+        elif equation[0] == 'not':
+            return Not(self.transform_equation_recursive(equation[1], variables=variables))
+        elif equation[0] == 'implies':
+            return Implies(self.transform_equation_recursive(equation[1], variables=variables), self.transform_equation_recursive(equation[2], variables=variables))
+        elif equation[0] == 'iff':
+            return Iff(self.transform_equation_recursive(equation[1], variables=variables), self.transform_equation_recursive(equation[2], variables=variables))
+        else:
+            if equation[0] in self.logic_predicates:
+                predicate = ()
+                for i in range(1, len(equation)):
+                    var_name = equation[i][1:]
+                    if var_name not in variables:
+                        variables[var_name] = Variable(var_name)
+                    predicate += (variables[var_name],)
+                return self.logic_predicates[equation[0]](*predicate)
+                
+            else:
+                raise Exception('Predicate ' + equation[0] + ' not defined')
 
 
 # -----------------------------------------------

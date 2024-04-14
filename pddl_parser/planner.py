@@ -75,6 +75,67 @@ class Planner:
         parser.parse_problem(problem)
         # Parsed data
         state = parser.state
+        goal_pos = parser.positive_goals
+        goal_not = parser.negative_goals
+        # Do nothing because is applicable
+        if self.applicable(state, goal_pos, goal_not):
+            return [] 
+        # Grounding process
+        ground_actions = []
+        print("Objects", parser.objects)
+        print("Types", parser.types)
+        # Get all the actions as posible
+        for action in parser.actions:
+            print("Proposed actions", action.groundify_logic(parser.kb, parser.objects, parser.types))
+            print("EVALUATION Action", action.evaluate_precondition(parser.kb))
+            
+            for act in action.groundify(parser.objects, parser.types):
+                ground_actions.append(act)
+        # Search
+        visited = set([state])
+        fringe = [state, None]
+        path_cost = 0
+        while fringe:
+            state = fringe.pop(0)
+            plan = fringe.pop(0)
+            aplicable_actions = []
+            for act in ground_actions:
+                if self.applicable(state, act.positive_preconditions, act.negative_preconditions): # check if this action is applicable
+                    # Calculate the path cost
+                    path_cost = g(state, parser.state, path_cost)
+                    cost = path_cost + h(state, goal_pos, goal_not)
+                    # Add the action and cost to the list of aplicable actions
+                    aplicable_actions.append((act, cost))
+
+            # Sort the list of aplicable actions by cost
+            aplicable_actions.sort(key=lambda x: x[1], reverse=False)
+
+            for act, _ in aplicable_actions:
+                new_state = self.apply(state, act.add_effects, act.del_effects) # apply the action if is available and change the state
+                if new_state not in visited:
+                    if self.applicable(new_state, goal_pos, goal_not): # check if the new state is the goal
+                        full_plan = [act]
+                        steps = 0
+                        while plan:
+                            act, plan = plan
+                            full_plan.insert(0, act) # insert the action in the plan
+                            steps += 1
+                        return full_plan, steps
+                    visited.add(new_state)       # add the new state to the visited states
+                    fringe.append(new_state)     # add the new state to the fringe
+                    fringe.append((act, plan))   # add the action and the plan to the fringe
+                    path_cost -= 1 
+        return None
+    
+    def solver_research_per_steps(self, domain, problem):
+        """A* search is best-first graph search with f(n) = g(n)+h(n)."""
+        print("\n", "#"*7,"Solver with research algorithm and heuristic", "#"*7, "\n")
+        # Parser
+        parser = PDDL_Parser()
+        parser.parse_domain(domain)
+        parser.parse_problem(problem)
+        # Parsed data
+        state = parser.state
         print(state)
         goal_pos = parser.positive_goals
         goal_not = parser.negative_goals
