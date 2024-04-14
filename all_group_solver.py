@@ -58,4 +58,4 @@ group_files = find_domain_and_problem_files(directory)
 
 for domain_file, problem_files in group_files:
     #print(f"domain_file = {domain_file}, problem_files = {problem_files}")
-    execute_pddl_parser(directory, domain_file, problem_files)
+    execute_pddl_parser(directory, domain_file, problem_files) #
