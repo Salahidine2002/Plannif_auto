@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>
 
-from pddl_parser.PDDL import PDDL_Parser
-from pddl_parser.heuristic import g, h
+from PDDL import PDDL_Parser
+from heuristic import g, h
 import sys, time
 
 
@@ -70,6 +70,12 @@ class Planner:
     def solver_research_heuristic(self, domain, problem):
         """A* search is best-first graph search with f(n) = g(n)+h(n)."""
         print("\n", "#"*7,"Solver with research algorithm and heuristic", "#"*7, "\n")
+        weights = {
+            'on': 10,      # Poids élevé pour chaque tuile non à sa place correcte
+            'empty': 3,    # Poids modéré pour chaque cellule qui devrait être vide et ne l'est pas
+            'touch': 0,    # Poids nul ou faible car il ne change pas et n'affecte pas directement la résolution du problème
+            'default': 1   # Poids par défaut pour toute condition non spécifiée
+        }
         # Parser
         parser = PDDL_Parser()
         parser.parse_domain(domain)
@@ -101,7 +107,8 @@ class Planner:
                 if self.applicable(state, act.positive_preconditions, act.negative_preconditions):
                     # Calculate the total cost for reaching this new state
                     new_cost = path_cost + 1  # Increment path cost as you dive deeper
-                    cost = new_cost + h(state, goal_pos, goal_not)  # g(n) + h(n)
+                    #print(f'State: {state}')
+                    cost = new_cost + h(state, goal_pos, goal_not, weights=weights)  # g(n) + h(n)
                     aplicable_actions.append((act, cost))
 
             # Sort the list of aplicable actions by cost
