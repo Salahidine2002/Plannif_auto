@@ -41,8 +41,3 @@ def h(state, goal_pos, goal_not, name='base', weights=None, history_length=None)
                     h_value += adaptive_weight
 
     return h_value
-
-
-def g(state, initial_state, path_cost):
-    # Calculate the uniform cost
-    return path_cost+1
