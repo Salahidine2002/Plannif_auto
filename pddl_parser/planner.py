@@ -115,11 +115,11 @@ class Planner:
                     # Calculate the path cost
                     path_cost = g(path_cost, parser.state, act, new_state)
                     #print("ground_actions", ground_actions[46])
-                    heuristic_cost = h(state, goal_pos, goal_not)
+                    #heuristic_cost = h(state, goal_pos, goal_not)
                     all_possible_actions.append(act)
                     #print("all_possible_actions", all_possible_actions)
                     planning_problem = BasePlanningProblem(ini_state, state, goal_pos, goal_not, act, path_cost)
-                    #heuristic_cost = planning_problem.h_pg_levelsum()
+                    heuristic_cost = planning_problem.h_pg_setlevel()
                     cost = path_cost + heuristic_cost
                     print("Total cost", cost)
                     # Add the action and cost to the list of aplicable actions

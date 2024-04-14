@@ -1,4 +1,4 @@
-from itertools import chain
+from itertools import chain, combinations
 from .layers import BaseActionLayer, BaseLiteralLayer, makeNoOp, make_node, make_node_dic
 class LiteralLayer(BaseLiteralLayer):
 
@@ -119,10 +119,6 @@ class PlanningGraph:
 
         # make no-op actions that persist every literal to the next layer
 
-        # for s in self.state_map:
-        #     print("States: ", s)
-        #     print(s.op)
-        #     print(s.args) 
         no_ops = [make_node(n, no_op=True) for n in chain(*(makeNoOp(s) for s in self.state_map))]
         my_iter = MyIterator(self.app_actions)
         self._actionNodes = no_ops + [make_node_dic(key,value) for key,value in my_iter]
@@ -149,17 +145,6 @@ class PlanningGraph:
         it is satisfied at the root of the planning graph) and Goal_2 first
         appears in level 3, then the levelsum is 0 + 3 = 3.
 
-        Hints
-        -----
-          (1) See the pseudocode folder for help on a simple implementation
-          (2) You can implement this function more efficiently than the
-              sample pseudocode if you expand the graph one level at a time
-              and accumulate the level cost of each goal rather than filling
-              the whole graph at the start.
-
-        See Also
-        --------
-        Russell-Norvig 10.3.1 (3rd Edition)
         """
 
         levelsum = 0
@@ -181,6 +166,68 @@ class PlanningGraph:
 
         levelsum = sum_neg - sum_pos
         return levelsum
+    
+    def h_maxlevel(self):
+        """ Calculate the max level heuristic for the planning graph
+
+        The max level is the largest level cost of any single goal fluent.
+        The "level cost" to achieve any single goal literal is the level at
+        which the literal first appears in the planning graph. Note that
+        the level cost is **NOT** the minimum number of actions to achieve
+        a single goal literal.
+
+        For example, if Goal1 first appears in level 1 of the graph and
+        Goal2 first appears in level 3, then the levelsum is max(1, 3) = 3.
+
+        -----
+        WARNING: you should expect long runtimes using this heuristic with A*
+        """
+        maxlevel = 0
+        self.fill()
+        for goal in self.goal_pos:
+            for index, layer in enumerate(self.literal_layers):
+                if goal in layer:
+                    maxlevel = max(maxlevel, index)
+                    break
+        
+    
+        for goal in self.goal_neg:
+                for index, layer in enumerate(self.literal_layers):
+                    if goal in layer:
+                        maxlevel = max(maxlevel, index)
+                        break
+        return maxlevel
+    
+    def h_setlevel(self):
+        """ Calculate the set level heuristic for the planning graph
+
+        The set level of a planning graph is the first level where all goals
+        appear such that no pair of goal literals are mutex in the last
+        layer of the planning graph.
+        -----
+        WARNING: you should expect long runtimes using this heuristic on complex problems
+        """
+        self.fill()
+        for index, layer in enumerate(self.literal_layers):
+            # Check whether all positive goals are met
+            positive_goals_met = all(goal in layer for goal in self.goal_pos)
+            # Check whether all negative goals are met
+            negative_goals_met = all(goal not in layer for goal in self.goal_neg)
+            
+            # If all positive and negative goals are met in this layer
+            if positive_goals_met and negative_goals_met:
+                # Check that no pair of goal literals is mutex
+                mutex_goals = False
+                for Goal1, Goal2 in combinations(self.goal, 2):
+                    if layer.is_mutex(Goal1, Goal2):
+                        mutex_goals = True
+                        break
+                # If no pair of goal literals is mutex, return the index
+                if not mutex_goals:
+                    return index
+        print("No valid level found")
+        return float('inf')        
+
     
     def fill(self, maxlevels=-1):
         """ Extend the planning graph until it is leveled, or until a specified number of
