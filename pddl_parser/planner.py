@@ -19,7 +19,7 @@
 
 from pddl_parser.PDDL import PDDL_Parser
 from pddl_parser.heuristic import h
-from .planning_problem import BasePlanningProblem
+from pddl_parser.planning_problem import BasePlanningProblem
 import sys, time
 
 
