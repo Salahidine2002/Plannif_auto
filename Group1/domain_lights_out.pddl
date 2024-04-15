@@ -1,5 +1,5 @@
 (define (domain lights_out)
-    (:requirements :strips :typing)
+    (:requirements :strips :typing :disjunctive-preconditions )
     (:types light)
     (:predicates (adjacent ?l1 - light ?l2 - light)  (on ?l1 - light))
     (:action switch
