@@ -1,6 +1,7 @@
 from .utils import Expr, Action
 from itertools import combinations
-from collections import defaultdict, MutableSet
+from collections import defaultdict
+from collections.abc import MutableSet
 
 
 
