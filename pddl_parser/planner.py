@@ -111,7 +111,7 @@ class Planner:
                     # Calculate the total cost for reaching this new state
                     new_cost = path_cost + 1  # Increment path cost as you dive deeper
                     #print(f'State: {state}')
-                    cost = new_cost + h(state, goal_pos, goal_not, weights=weights)  # g(n) + h(n)
+                    cost = new_cost + h(state, goal_pos, goal_not, weights=None)  # g(n) + h(n)
                     planning_problem = BasePlanningProblem(ini_state, state, goal_pos, goal_not, act, path_cost)
                     # Choose the heuristic you want to use, h, h_pg_setlevel, h_pg_levelsum or h_pg_maxlevel 
                     heuristic_cost = planning_problem.h_pg_maxlevel()
